@@ -26,14 +26,19 @@ app.listen(PORT, () => {
 });
 
 app.get("/urls", (req, res) => {
+
   const templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
 
+// Displays a newly generated shortURL, with a link to the website. 
 app.get("/urls/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL]
   const shortURL = req.params.shortURL
   const templateVars = { shortURL, longURL };
+
+  console.log(longURL, shortURL);
+
   res.render("urls_show.ejs", templateVars);
 })
 
@@ -41,8 +46,27 @@ app.get("/new", (req, res) => {
   res.render("urls_new");
 })
 
+// Redirects to website
+app.get("/u/:shortURL", (req, res) => {
+  const longURL = urlDatabase[req.params.shortURL]
+
+  res.redirect(longURL);
+})
+
+// Takes the longURL from /new and turns it into a shortURL. Stored in db. 
 app.post("/urls", (req, res) => {
-  console.log(req.body);
-  res.send("Ok");
+  let shortURL = generateRandomString();
+  urlDatabase[shortURL] = req.body.longURL
+
+  res.redirect(`/urls/${shortURL}`)
 });
+
+// Deletes url 
+app.post("/urls/:shortURL/delete", (req, res) => {
+  delete urlDatabase[req.params.shortURL];
+
+  res.redirect("/urls")
+})
+
+
 
