@@ -37,8 +37,6 @@ app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL
   const templateVars = { shortURL, longURL };
 
-  console.log(longURL, shortURL);
-
   res.render("urls_show.ejs", templateVars);
 })
 
@@ -68,5 +66,18 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect("/urls")
 })
 
+// When submit button is clicked from /urls/:shortURL
+app.post("/urls/:id", (req, res) => {
+  const longURL = req.body.longURL;
+  const shortURL = req.params.id;
+  const newShortURL = generateRandomString();
+
+  urlDatabase[newShortURL] = longURL;
+  delete urlDatabase[shortURL];
+
+
+  console.log(urlDatabase);
+  res.redirect("/urls")
+})
 
 
