@@ -16,7 +16,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 
-// Database templates to show the structure. 
+// Database templates to show the db structure. 
 const urlDatabase = {
   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
   i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
@@ -30,15 +30,15 @@ const userDatabase = {
 }
 const emailDatabase = ["example@gmail.com"];
 
+// PORT = 8080
+app.listen(PORT, () => {
+  console.log(`Example app listening on port ${PORT}!`);
+});
+
 
 // Landing page
 app.get("/", (req, res) => {
   res.send("Hello!");
-});
-
-
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
 });
 
 
@@ -89,11 +89,13 @@ app.get("/new", (req, res) => {
 // Redirects to website.
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL].longURL;
+  const usersURLs = urlDatabase[req.params.shortURL].userID;
+  const userId = req.cookies["user_id"];
 
-  if (longURL) {
+  if (longURL && userId === usersURLs) {
     res.redirect(longURL);
   } else {
-    res.send('Sorry the short url does not exist.')
+    res.send('Sorry the short url does not exist, or you do not own that short url.')
   }
 
 })
@@ -133,10 +135,17 @@ app.post("/urls", (req, res) => {
 
 // Deletes url. 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[req.params.shortURL];
+  const userId = req.cookies["user_id"];
+  const usersURL = urlDatabase[req.params.shortURL].userID;
 
-  res.redirect("/urls")
-})
+  if (userId === usersURL) {
+    delete urlDatabase[req.params.shortURL];
+    res.redirect("/urls");
+  } else {
+    res.status(400).send("You cannot delete this short url.")
+  }
+
+});
 
 
 // When submit button is clicked from /urls/:shortURL
@@ -144,7 +153,7 @@ app.post("/urls/:id", (req, res) => {
   const newLongURL = req.body.longURL;
   const shortURL = req.params.id;
   urlDatabase[shortURL].longURL = newLongURL;
-  const userId = req.cookies["user_id"]
+  const userId = req.cookies["user_id"];
   const userUrl = urlDatabase[shortURL].userID;
 
   if (userId === userUrl) {
@@ -163,7 +172,7 @@ app.post("/login", (req, res) => {
 
   // If login is left blank.
   if (email === "" || password === "") {
-    return res.status(400).send("Please fill out form.")
+    return res.status(400).send("Please fill out form.");
   };
 
   // Validating email and password. 
@@ -178,7 +187,7 @@ app.post("/login", (req, res) => {
     }
   };
   // If email and/or password are not valid.
-  res.status(400).send("Username or password does not exists.")
+  res.status(400).send("Username or password does not exist.");
 });
 
 
@@ -191,27 +200,27 @@ app.post("/register", (req, res) => {
   // If input is submitted blank by user
   if (email === "" || password === "") {
     return res.status(400).send('Please make sure to fill in email and password.');
-  }
+  };
 
   // If email already exits
   for (let existingEmail of emailDatabase) {
     if (email === existingEmail) {
       return res.status(400).send('Sorry that email is already in use.');
     }
-  }
+  };
 
   // Adding new user to the database, and setting cookie
   const newRegistrant = {
     id: generateRandomString(),
     email: email,
     password: hashedPassword,
-  }
+  };
 
   userDatabase[newRegistrant.id] = newRegistrant;
   emailDatabase.push(email);
   res.cookie("user_id", newRegistrant.id).redirect('/urls');
 
-})
+});
 
 // Clears cookie when user logs out
 app.post('/logout', (req, res) => {
